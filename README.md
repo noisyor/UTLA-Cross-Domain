@@ -16,4 +16,4 @@ For each of the source datasets, we train a profiling model using the labelled t
 3. Direct_Transfer_from_X_to_Y.py: Direct Transfer (DT) codes from source dataset X to target dataset Y, which does not involve finetuning the source model.
 4. UTLA_from_X_to_Y.py: UTLA code from source dataset X to target dataset Y, which does not involve finetuning the source model.
 
-In addition to the above, we perform a convergence analysis for different initializations of the target encoder, the results of which can be found in [Convergence-analysis](https://github.com/Cross-Platform-Cache-Attack/Convergence_analysis).
+In addition to the above, we perform a convergence analysis for different initializations of the target encoder, the results of which can be found in [Convergence-analysis](https://github.com/UTLA-Cross-Domain/Convergence-analysis).
