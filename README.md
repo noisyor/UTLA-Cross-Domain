@@ -1,5 +1,5 @@
 # Unsupervised Transfer Learning Attack (UTLA)
-This repository contains code and data to replicate the results of the manuscript submission to TCHES 2026 Cycle 1 (Submission Number: 12) titled "Attack from Shadows: Unsupervised Side-channel Transfer Learning across Devices and Modalities." 
+This repository contains code and data to replicate the results of the manuscript submission to Transactions on Cryptographic Hardware and Embedded Systems (TCHES) Volume 2026 Issue 1 (Submission Number: 12) titled "Attack from Shadows: Unsupervised Side-channel Transfer Learning across Devices and Modalities." 
 
 ## Repository Organization
 This repository is organized into folders for each of the source device types, including:
