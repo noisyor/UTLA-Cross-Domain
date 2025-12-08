@@ -12,7 +12,7 @@ NOTE: The denoising and standardization are computed on full traces to match
       train_ches_cnn.py behavior, then the window is extracted for saving.
 
 Usage:
-    python preprocess_ches.py
+    python ches-preprocessing.py
 """
 
 import os
@@ -26,10 +26,10 @@ from sklearn.decomposition import PCA
 # ============================================================================
 
 # Input path
-CHES_RAW_PATH = "/mnt/2tb/saion/downloads/CHES_CHALLENGE_2025_PUBLIC/CHES_Challenge.h5"
+CHES_RAW_PATH = "./CHES_Challenge.h5"
 
 # Output path
-CHES_PREPROCESSED_PATH = "/mnt/2tb/saion/downloads/CHES_CHALLENGE_2025_PUBLIC/CHES_Challenge_preprocessed.h5"
+CHES_PREPROCESSED_PATH = "./CHES_Challenge_preprocessed.h5"
 
 # Trace window parameters (extracted AFTER preprocessing on full traces)
 TRACE_OFFSET = 1200
