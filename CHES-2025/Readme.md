@@ -34,62 +34,37 @@ XMEGA/Data/
 
 | File | Description |
 |------|-------------|
-| `train_ches_cnn_4layer.py` | Supervised profiling on CHES dataset |
-| `utla_ches_to_xmega.py` | UTLA transfer: CHES → XMEGA |
-| `utla_xmega_to_ches.py` | UTLA transfer: XMEGA → CHES |
+| `ches-preprocessing.py` | Preprocessing script for CHES dataset |
+| `Source_profiling.py` | Supervised profiling on CHES dataset |
+| `UTLA_from_CHES_to_XMEGA.py` | UTLA transfer: CHES → XMEGA |
 
 ## Step-by-Step Instructions
 
-### Step 1: Profiling on CHES Dataset
+### Step 1: Preprocessing
+
+Preprocess the CHES Challenge dataset:
+
+```bash
+python ches-preprocessing.py
+```
+
+### Step 2: Source Profiling
 
 Train a supervised CNN model on the CHES Challenge dataset:
 
 ```bash
-python train_ches_cnn_4layer.py
+python Source_profiling.py 1
 ```
 
-**Outputs:**
-- `./models/best_ntge_model.pth` - Best model checkpoint
-- `./models/preprocessing_params.npy` - Preprocessing parameters
-- `./figures/training_curves.png` - Training curves
-- `./figures/GE_empirical_final.png` - GE curve
+Set argument to `1` for training or `0` for inference.
 
-### Step 2: UTLA Transfer Learning
-
-#### Option A: CHES → XMEGA Transfer
+### Step 3: UTLA Transfer Learning
 
 Transfer the CHES-trained model to attack XMEGA traces:
 
 ```bash
-python utla_ches_to_xmega.py --mode transfer --device 2
+python UTLA_from_CHES_to_XMEGA.py
 ```
-
-**Arguments:**
-- `--mode`: `pretrain` (train on CHES), `transfer` (UTLA), or `eval` (evaluate)
-- `--device`: Target XMEGA device (1-8)
-
-**Outputs:**
-- `./models_utla/utla_ches_to_xmega2_phase1.pth` - After 10 epochs
-- `./models_utla/utla_ches_to_xmega2_phase2.pth` - After 20 epochs
-- `./figures_utla/utla_training_xmega2.png` - Training curves
-
-#### Option B: XMEGA → CHES Transfer
-
-Transfer the XMEGA-trained model to attack CHES traces:
-
-```bash
-python utla_xmega_to_ches.py
-```
-
-**Prerequisites:**
-- Pre-trained XMEGA model: `../XMEGA-Expt/models/pre-trained_device2.pth`
-- Pre-trained CHES model: `./models/best_ntge_model.pth`
-
-**Outputs:**
-- `./models_utla_xmega_to_ches/baseline.pth` - Before transfer
-- `./models_utla_xmega_to_ches/phase1_epoch10.pth` - After 10 epochs
-- `./models_utla_xmega_to_ches/phase2_epoch20.pth` - After 20 epochs
-- `./figures_utla_xmega_to_ches/training_curves.png` - Training curves
 
 ## Configuration
 
