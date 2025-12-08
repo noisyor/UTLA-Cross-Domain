@@ -9,10 +9,6 @@ Target domain: XMEGA power traces
 The classifier is pre-trained on CHES and kept frozen.
 The encoder is adapted using adversarial domain adaptation + MMD loss.
 
-Usage:
-    python utla_ches_to_xmega.py --mode pretrain   # Pre-train on CHES
-    python utla_ches_to_xmega.py --mode transfer   # Transfer to XMEGA
-    python utla_ches_to_xmega.py --mode eval       # Evaluate on XMEGA
 """
 
 import matplotlib
@@ -43,7 +39,7 @@ CHES_DATA_PATH = "./CHES_Challenge.h5"
 CHES_PREPROCESSED_PATH = "./CHES_Challenge_preprocessed.h5"
 USE_PREPROCESSED = True  # Use preprocessed CHES traces (faster loading)
 
-XMEGA_DATA_PATH = "./XMEGA-Pow/Data/device0{}"  # Format with device number
+XMEGA_DATA_PATH = "./XMEGA-Power/Data/device0{}"  # Format with device number
 CHES_PRETRAINED_PATH = "./models/best_ntge_model.pth"  # 4-layer CHES model
 OUTPUT_DIR = "./models_utla"
 FIGURES_DIR = "./figures_utla"
