@@ -1,6 +1,6 @@
 Here are the files for Sakura-AES dataset.
 
-Step-1: Extract the zip files in the data folder.
+Step-1: Extract the zip files in the data folder (after downloading from the this link).
 
 Step-2: Run profiling step using Source_Profiling.py
 Set train_first_time to 1 for training or to 0 for inference on source dataset
