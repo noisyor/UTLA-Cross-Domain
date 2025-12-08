@@ -7,7 +7,7 @@ Uses empirical Monte Carlo NTGE computation (accurate for weak signals).
 Architecture matches XMEGA pre-trained model exactly for transfer learning compatibility.
 
 Usage:
-    python train_ches_cnn_4layer.py
+    python Source_profiling.py
 """
 
 import matplotlib
@@ -31,7 +31,7 @@ from tqdm import tqdm
 # ============================================================================
 
 # Paths - UPDATE THESE
-CHES_DATA_PATH = "/mnt/2tb/saion/downloads/CHES_CHALLENGE_2025_PUBLIC/CHES_Challenge.h5"
+CHES_DATA_PATH = "./CHES_Challenge.h5"
 OUTPUT_DIR = "./models"
 FIGURES_DIR = "./figures"
 RESULTS_DIR = "./results"
