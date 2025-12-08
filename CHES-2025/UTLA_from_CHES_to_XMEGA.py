@@ -39,11 +39,11 @@ from tqdm import tqdm
 # ============================================================================
 
 # Paths
-CHES_DATA_PATH = "/mnt/2tb/saion/downloads/CHES_CHALLENGE_2025_PUBLIC/CHES_Challenge.h5"
-CHES_PREPROCESSED_PATH = "/mnt/2tb/saion/downloads/CHES_CHALLENGE_2025_PUBLIC/CHES_Challenge_preprocessed.h5"
+CHES_DATA_PATH = "./CHES_Challenge.h5"
+CHES_PREPROCESSED_PATH = "./CHES_Challenge_preprocessed.h5"
 USE_PREPROCESSED = True  # Use preprocessed CHES traces (faster loading)
 
-XMEGA_DATA_PATH = "/home/saion/SCA-Attacks/Cross-Device-Profiled-Attack/Different_Devices/XMEGA/Data/device0{}"  # Format with device number
+XMEGA_DATA_PATH = "./XMEGA-Pow/Data/device0{}"  # Format with device number
 CHES_PRETRAINED_PATH = "./models/best_ntge_model.pth"  # 4-layer CHES model
 OUTPUT_DIR = "./models_utla"
 FIGURES_DIR = "./figures_utla"
