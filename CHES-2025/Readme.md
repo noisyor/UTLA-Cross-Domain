@@ -88,8 +88,8 @@ LAMBDA2 = 0.05   # Penultimate layer MMD
 
 | Dataset | Method | Reason |
 |---------|--------|--------|
-| CHES | Empirical Monte Carlo | Weak EM signals, statistical methods fail |
-| XMEGA-Power | Statistical GEEA | Strong power signals, analytical approximation works |
+| CHES | Empirical Monte Carlo | CHES evaluation path used by this implementation |
+| XMEGA-Power | Statistical GEEA | XMEGA evaluation path used by this implementation |
 
 ## Requirements
 

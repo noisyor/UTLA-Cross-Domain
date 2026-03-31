@@ -1,8 +1,8 @@
 # Unsupervised Transfer Learning Attack (UTLA)
 
-This is a lightweight code repository for reproducing the experiments from "Attack from Shadows: Unsupervised Side-channel Transfer Learning across Devices and Modalities," to appear in AsiaCCS 2026.
+This is the code repository for reproducing the experiments from "Attack from Shadows: Unsupervised Side-channel Transfer Learning across Devices and Modalities," appearing in AsiaCCS 2026.
 
-The repository intentionally does not include datasets, trained models, generated NumPy result arrays, generated figures, or generated analysis folders. Download datasets from the public sources linked below and place them in the expected `Data/` subdirectories before running experiments.
+Users are requested to download the datasets from the public sources linked below and place them in the expected `Data/` subdirectories before running experiments.
 
 ## Setup
 
@@ -21,12 +21,12 @@ The repository is organized by source or benchmark dataset:
 1. `XMEGA-Power`: XMEGA power traces from the CDPA-SCA cross-device dataset.
 2. `XMEGA-EM`: XMEGA EM traces from the CDPA-SCA cross-probe-position dataset.
 3. `Sakura-AES`: Sakura AES traces from the CDPA-SCA cross-device dataset.
-4. `ASCADv1-variable-key`: ASCAD variable-key metadata and placeholders.
-5. `ASCADv2`: ASCADv2 profiling code and placeholders.
-6. `x86-Cache`: x86 cache-timing profiling code and placeholders.
+4. `ASCADv1-variable-key`: ASCAD variable-key profiling, direct-transfer, and UTLA code.
+5. `ASCADv2`: ASCADv2 profiling, direct-transfer, and ASCADv2-to-ASCADv1 UTLA code.
+6. `x86-Cache`: x86 cache-timing profiling, direct-transfer, and x86-to-XMEGA UTLA code.
 7. `CHES-2025`: CHES Challenge 2025 profiling and CHES-to-XMEGA transfer code.
 
-Each experiment folder has a local `Readme.md` with dataset layout notes. Output files are written to `models/`, `results/`, and `figures/` subdirectories when scripts are run, but those generated artifacts are ignored by Git.
+Each experiment folder has a local `Readme.md` with dataset layout notes. Output files are written to `models/`, `results/`, and `figures/` subdirectories when scripts are run.
 
 ## Data Layout
 
@@ -91,7 +91,7 @@ python UTLA_from_CHES_to_XMEGA-Power.py --mode transfer --device 2
 
 ## Bounded Smoke Runs
 
-The ASCADv1 profiling and ASCADv1-to-fixed-key UTLA scripts support environment variables for quick trainability checks. These smoke runs verify data loading, one training pass, checkpoint save/load, transfer training, and result writing; they do not validate key-recovery quality.
+The ASCADv1 profiling and ASCADv1-to-fixed-key UTLA scripts support environment variables for quick trainability checks. These smoke runs exercise data loading, one training pass, checkpoint save/load, transfer training, and result writing.
 
 ```bash
 cd ASCADv1-variable-key

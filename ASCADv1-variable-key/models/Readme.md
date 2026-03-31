@@ -1,1 +1,1 @@
-Pre-Trained models are available here.
+Model checkpoints are written here by the profiling and transfer scripts.
