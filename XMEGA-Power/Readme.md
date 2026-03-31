@@ -11,4 +11,14 @@ Choose source_device from {1, 2, 3, 4, 5, 6, 7, 8}
 python Source_Profiling.py train_first_time source_device
 ```
 
-Step-4: Run the attack.
+Step-4: Run transfer attacks.
+
+For in-domain XMEGA-Power to XMEGA-Power UTLA:
+```
+python XMEGA_UTLA.py set_UTLA_train source_device target_device
+```
+
+For direct transfer:
+```
+python XMEGA_Direct_Transfer.py train_first_time source_device target_device print_intermediate_GE
+```

@@ -30,8 +30,8 @@ from tqdm import tqdm
 # Configuration
 # ============================================================================
 
-# Paths - UPDATE THESE
-CHES_DATA_PATH = "./CHES_Challenge.h5"
+# Paths. Override with environment variables when data is stored elsewhere.
+CHES_DATA_PATH = os.environ.get("CHES_DATA_PATH", "./CHES_Challenge.h5")
 OUTPUT_DIR = "./models"
 FIGURES_DIR = "./figures"
 RESULTS_DIR = "./results"

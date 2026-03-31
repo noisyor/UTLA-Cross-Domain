@@ -10,7 +10,7 @@ Download the CHES Challenge 2025 dataset from Google Drive:
 
 1. Visit the [CHES Challenge 2025](https://pace-tl.gitbook.io/ches-challenge-2025) official website for challenge details
 2. Download the public dataset from [Google Drive](https://drive.google.com/drive/folders/1JGbphwZXQvN_tEhpBIbQ-q-pN9wkqKQ-?usp=sharing)
-3. Extract and place `CHES_Challenge.h5` in your data directory.
+3. Extract and place `CHES_Challenge.h5` in this directory, or set `CHES_DATA_PATH` to its location.
 
 ### XMEGA-Power Dataset
 
@@ -53,27 +53,26 @@ python ches-preprocessing.py
 Train a supervised CNN model on the CHES Challenge dataset:
 
 ```bash
-python Source_profiling.py 1
+python Source_profiling.py
 ```
-
-Set argument to `1` for training or `0` for inference.
 
 ### Step 3: UTLA Transfer Learning
 
 Transfer the CHES-trained model to attack XMEGA-Power traces:
 
 ```bash
-python UTLA_from_CHES_to_XMEGA-Power.py
+python UTLA_from_CHES_to_XMEGA-Power.py --mode transfer --device 2
 ```
 
 ## Configuration
 
-Edit the configuration section at the top of each script to modify:
+Edit the configuration section at the top of each script, or override paths with environment variables:
 
 ```python
 # Paths
-CHES_DATA_PATH = "/path/to/CHES_Challenge.h5"
-XMEGA_DATA_PATH = "/path/to/XMEGA-Power/Data/device0{}"
+CHES_DATA_PATH = "./CHES_Challenge.h5"
+CHES_PREPROCESSED_PATH = "./CHES_Challenge_preprocessed.h5"
+XMEGA_DATA_PATH = "../XMEGA-Power/Data/device0{}"
 
 # Training parameters
 BATCH_SIZE = 256

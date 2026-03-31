@@ -9,4 +9,14 @@ Choose source_device from {1, 2, 3, 4, 5, 6, 7, 8}
 python Source_Profiling.py train_first_time source_device
 ```
 
-Step-4: Run the attack.
+Step-4: Run transfer attacks.
+
+For Sakura-AES to XMEGA-EM UTLA:
+```
+python UTLA_from_Sakura_to_XMEGA-EM.py set_UTLA_train source_device target_device
+```
+
+For Sakura-AES to XMEGA-Power UTLA:
+```
+python UTLA_from_Sakura_to_XMEGA-Power.py set_UTLA_train source_device target_device
+```

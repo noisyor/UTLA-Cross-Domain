@@ -18,22 +18,20 @@ import itertools
 import random
 import sys
 import params
-
-def make_variable(tensor, volatile=False):
-    """Convert Tensor to Variable."""
-    if torch.cuda.is_available():
-        tensor = tensor.cuda()
-    return tensor
+from sklearn.decomposition import PCA
 
 # main
 set_UTLA_train= int(sys.argv[1])
 source_device= int(sys.argv[2]) 
 target_device= int(sys.argv[3]) 
 
-with torch.no_grad():
-    torch.cuda.empty_cache()
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+def make_variable(tensor, volatile=False):
+    """Convert Tensor to Variable."""
+    if torch.cuda.is_available():
+        tensor = tensor.cuda()
+    return tensor
 
 ### handle the dataset
 class TorchDataset(Dataset):
@@ -90,7 +88,19 @@ HW_byte = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 
             6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4,
             4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4, 5, 5, 6, 5,
             6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8]
-           
+
+InvSbox = [82, 9, 106, 213, 48, 54, 165, 56, 191, 64, 163, 158, 129, 243, 215, 251, 124, 227, 57, 130, 155, 47, 255, 135,
+           52, 142, 67, 68, 196, 222, 233, 203, 84, 123, 148, 50, 166, 194, 35, 61,238, 76, 149, 11, 66, 250, 195, 78, 8,
+           46, 161, 102, 40, 217, 36, 178, 118, 91, 162, 73, 109, 139, 209, 37, 114, 248, 246, 100, 134, 104, 152, 22, 212,
+           164, 92, 204, 93, 101, 182, 146, 108, 112, 72, 80, 253, 237, 185, 218, 94, 21, 70, 87, 167, 141, 157, 132, 144,
+           216, 171, 0, 140, 188, 211, 10, 247, 228, 88, 5, 184, 179, 69, 6, 208, 44, 30, 143, 202, 63, 15, 2, 193, 175, 189,
+           3, 1, 19, 138, 107, 58, 145, 17, 65, 79, 103, 220, 234, 151, 242, 207, 206, 240, 180, 230, 115, 150, 172, 116, 34,
+           231, 173, 53, 133, 226, 249, 55, 232, 28, 117, 223, 110, 71, 241, 26, 113, 29, 41, 197, 137, 111, 183, 98, 14, 170,
+           24,190, 27, 252, 86, 62, 75, 198, 210, 121, 32, 154, 219, 192, 254, 120, 205, 90, 244, 31, 221, 168, 51, 136, 7,
+           199, 49, 177, 18, 16, 89, 39, 128, 236, 95, 96, 81, 127, 169, 25, 181,74, 13, 45, 229, 122, 159, 147, 201, 156,
+           239, 160, 224, 59, 77, 174, 42, 245, 176, 200, 235, 187, 60, 131, 83, 153, 97, 23, 43, 4, 126, 186, 119, 214, 38,
+           225, 105, 20, 99, 85, 33,12, 125]
+
 ### test/attack
 def test(model, profile_model, device_id, model_flag='pretrained'):
     """
@@ -108,7 +118,7 @@ def test(model, profile_model, device_id, model_flag='pretrained'):
     mmd_loss = 0
     encoder_loss = 0
     clf_criterion = nn.CrossEntropyLoss()
-    test_num = params.target_test_num
+    test_num = target_test_num
     test_loader = target_test_loader
     real_key = real_key_02
     test_preds_all = torch.zeros((test_num, class_num), dtype=torch.float, device='cpu')
@@ -125,15 +135,17 @@ def test(model, profile_model, device_id, model_flag='pretrained'):
         target_data = Variable(target_data)
         source_data = Variable(source_data)
         target_label = Variable(target_label)
-        target_preds, target_feat, target_featm1 = model(target_data)
-        _, source_feat, source_featm1 = profile_model(source_data)
-        test_preds_all[i*params.batch_size:(i+1)*params.batch_size, :] = target_preds
+        target_preds, target_feat, target_featm1, target_featm2 = model(target_data)
+        _, source_feat, source_featm1, source_featm2 = profile_model(source_data)
+        softmax = nn.Softmax(dim=1)  # softmax for the output layer
+        test_preds_all[i*batch_size:(i+1)*batch_size, :] = softmax(target_preds)
         test_loss += clf_criterion(target_preds, target_label)
 
         mmd_loss1 = mmd_rbf(source_feat, target_feat)  # MMD loss between source and target features
         mmd_loss2 = mmd_rbf(source_featm1, target_featm1) # MMD loss between previous features (for stability)
+        mmd_loss3 = mmd_rbf(source_featm2, target_featm2)
 
-        mmd_loss += params.lambda1*mmd_loss1 + params.lambda2*mmd_loss2
+        mmd_loss += lambda1*mmd_loss1 + lambda2*mmd_loss2 + lambda3*mmd_loss3 # total MMD loss, lambda1, lambda2, lambda3 are penalty coefficients
         encoder_loss += clf_criterion(target_feat, Variable((torch.ones(target_feat.size(0)).long()).cuda()))
         pred = target_preds.data.max(1)[1]
         correct += pred.eq(target_label.data.view_as(pred)).cpu().sum()
@@ -146,6 +158,73 @@ def test(model, profile_model, device_id, model_flag='pretrained'):
         100. * correct / len(test_loader.dataset), mmd_loss.data, encoder_loss.data))
     plot_guessing_entropy(test_preds_all.numpy(), real_key, device_id, model_flag)
 
+def encoder_rep(epoch, model, profile_model):
+    # enter evaluation mode
+    model.eval()
+    profile_model.eval()
+    test_num = target_test_num
+    target_feat_preds = torch.zeros((test_num, 192), dtype=torch.float, device='cpu')
+    source_feat_preds = torch.zeros((test_num, 192), dtype=torch.float, device='cpu')
+    iter_target = iter(target_test_loader)
+    iter_source = iter(source_test_loader)
+    iter_num = len(target_test_loader)
+    for i in range(0,iter_num):
+        source_data, _ , _ = next(iter_source)
+        target_data, target_label, _ = next(iter_target)
+        if cuda:
+            source_data = source_data.cuda()
+            target_data = target_data.cuda()
+            target_label = target_label.cuda()
+        target_data = Variable(target_data)
+        source_data = Variable(source_data)
+        target_label = Variable(target_label)
+        _, target_feat, _, _ = model(target_data)
+        _, source_feat, _, _ = profile_model(source_data)
+        target_feat_preds[i*batch_size:(i+1)*batch_size, :] = target_feat.cpu()  # save the target features
+        source_feat_preds[i*batch_size:(i+1)*batch_size, :] = source_feat.cpu()  # save the source features
+    
+    # Convert tensors to NumPy arrays
+    target_feat_preds_np = target_feat_preds.detach().numpy()
+    source_feat_preds_np = source_feat_preds.detach().numpy()
+
+    # Concatenate the target and source feature predictions
+    combined_feats = np.concatenate((target_feat_preds_np, source_feat_preds_np), axis=0)
+
+    # Perform PCA to reduce to 2 dimensions
+    pca = PCA(n_components=2)
+    pca_result = pca.fit_transform(combined_feats)
+
+    # Split the PCA results back into target and source
+    target_pca = pca_result[:target_feat_preds_np.shape[0], :]
+    source_pca = pca_result[target_feat_preds_np.shape[0]:, :]
+    # Calculate the range of the source features
+    x_min, x_max = source_pca[:, 0].min(), source_pca[:, 0].max()
+    y_min, y_max = source_pca[:, 1].min(), source_pca[:, 1].max()
+
+    # Add some padding to the limits for better visualization
+    x_padding = (x_max - x_min) * 0.1
+    y_padding = (y_max - y_min) * 0.1
+
+    x_min -= 3*x_padding
+    x_max += 3*x_padding
+    y_min -= 3*y_padding
+    y_max += 3*y_padding
+
+    # Plot the PCA results
+    plt.figure(figsize=(8, 6))
+    plt.scatter(source_pca[:, 0], source_pca[:, 1], label='Source Features', alpha=0.5, color='red', marker='o')
+    plt.scatter(target_pca[:, 0], target_pca[:, 1], label='Target Features', alpha=0.5, color='blue', marker='d')
+    # Set fixed axis limits
+    plt.xlim(x_min, x_max)
+    plt.ylim(y_min, y_max)
+    plt.xlabel('PCA Component 1', fontsize=14)  # x-axis label
+    plt.ylabel('PCA Component 2', fontsize=14)  # y-axis label
+    plt.title('Epoch = %d ' % (epoch), fontsize=16)
+    plt.legend()
+    plt.tight_layout()  # Automatically adjust padding to prevent clipping  
+    plt.show()
+    plt.savefig('./figures/PCA_UTLA_crossSC_{}_to_{}_'.format(source_device_id, target_device_id) + '_epoch_{}'.format(epoch)+'.png')
+
 def test_intermediate(model):
     # enter evaluation mode
     model.eval()
@@ -154,10 +233,13 @@ def test_intermediate(model):
     iter_target = iter(target_finetune_loader)
     # max trace num for attack
     trace_num_max = 1000
-    num_iter = int(trace_num_max/params.batch_size)
+    num_iter = int(trace_num_max/batch_size)
     guessing_entropy = np.zeros(trace_num_max)
     mean_est = np.zeros([256])
     var_est = np.zeros([256])
+    guessing_entropy_neg = np.zeros(trace_num_max)
+    mean_est_neg = np.zeros([256])
+    var_est_neg = np.zeros([256])
     score_mat = np.zeros((trace_num_max, 256))
     plaintext = plaintexts_target_train
     test_preds_all = torch.zeros((trace_num_max, class_num), dtype=torch.float, device='cpu')
@@ -169,10 +251,11 @@ def test_intermediate(model):
         if cuda:
             target_data, target_label = target_data.cuda(), target_label.cuda()
         target_data, target_label = Variable(target_data), Variable(target_label)
-        target_preds, _, _ = model(target_data)
-        test_preds_all[i*params.batch_size:(i+1)*params.batch_size, :] = target_preds
-        ordering[i*params.batch_size:(i+1)*params.batch_size] = target_idx
-        label_ordering[i*params.batch_size:(i+1)*params.batch_size] = target_label.cpu()
+        target_preds, _, _, _ = model(target_data)
+        softmax = nn.Softmax(dim=1)  # Use softmax to get probabilities
+        test_preds_all[i*batch_size:(i+1)*batch_size, :] = softmax(target_preds)
+        ordering[i*batch_size:(i+1)*batch_size] = target_idx
+        label_ordering[i*batch_size:(i+1)*batch_size] = target_label.cpu()
 
     #breakpoint()
     for i in range(0,trace_num_max):
@@ -184,25 +267,33 @@ def test_intermediate(model):
             label = Sbox[initialState]
             score_mat[i, key_guess] = test_preds_all[i, label] - test_preds_all[i, truelabel]
     
+    score_mat_neg = np.copy(score_mat)*-1
+
     for key_guess in range(0, 256):
         mean_est[key_guess] = np.mean(score_mat[:,key_guess])
         var_est[key_guess] = np.var(score_mat[:,key_guess])
+        mean_est_neg[key_guess] = np.mean(score_mat_neg[:,key_guess])
+        var_est_neg[key_guess] = np.var(score_mat_neg[:,key_guess])
 
     # attack multiples times for average
     for i in range(0,trace_num_max):
         guessing_entropy[i] = 1
+        guessing_entropy_neg[i] = 1
         for fk in range(0, 256):
-            if(fk!=real_key and var_est[fk]!=0):
+            if(fk!=real_key):
                 guessing_entropy[i] = guessing_entropy[i]  + norm.cdf(np.sqrt(i+1)*mean_est[fk]/np.sqrt(var_est[fk]), loc=0, scale=1)
-            elif(fk!=real_key and var_est[fk]==0):
-                guessing_entropy[i] = guessing_entropy[i]  + norm.cdf(np.sqrt(i+1)*mean_est[fk]/np.sqrt(var_est[fk]+1e-6), loc=0, scale=1)
+                guessing_entropy_neg[i] = guessing_entropy_neg[i]  + norm.cdf(np.sqrt(i+1)*mean_est_neg[fk]/np.sqrt(var_est_neg[fk]), loc=0, scale=1)
 
-    guessing_entropy = guessing_entropy.astype(int)
-    if(np.size(np.where(guessing_entropy<2))==0):
-        output_str = trace_num_max - 1
+    if(guessing_entropy_neg[-1] < guessing_entropy[-1]):
+        # if negative score is better, use negative score
+        guessing_entropy = guessing_entropy_neg
+
+    guessing_entropy_int = guessing_entropy.astype(int)
+    if(np.size(np.where(guessing_entropy_int<2))==0):
+        output_str = trace_num_max-1
     else:
         # find the first point where GE < 2
-        output_str = np.where(guessing_entropy<2)[0][0]
+        output_str = np.where(guessing_entropy_int<2)[0][0]
     #breakpoint()
     return output_str+1,guessing_entropy[-1]
 
@@ -234,8 +325,8 @@ def UTLA_train(epoch, atn_target, atn_profile, critic):
         optimizer_critic.zero_grad()
 
         # extract and concat features
-        _,feat_s,_ = atn_profile(source_data)
-        _,feat_t,_ = atn_target(target_data)
+        _,feat_s,_, _ = atn_profile(source_data)
+        _,feat_t,_, _ = atn_target(target_data)
         feat_concat = torch.cat((feat_s, feat_t), 0)
 
         # predict on discriminator
@@ -260,8 +351,8 @@ def UTLA_train(epoch, atn_target, atn_profile, critic):
         optimizer_model.zero_grad()
 
         # extract target features
-        _,feat_s,feat_sm1 = atn_profile(source_data)
-        _,feat_t,feat_tm1 = atn_target(target_data)
+        _,feat_s,feat_sm1,feat_sm2 = atn_profile(source_data)
+        _,feat_t,feat_tm1,feat_tm2 = atn_target(target_data)
 
         # predict on discriminator
         pred_t_enctrain = critic(feat_t.detach())
@@ -275,9 +366,10 @@ def UTLA_train(epoch, atn_target, atn_profile, critic):
         # compute mmd-loss
         mmd_loss1 = mmd_rbf(feat_s,feat_t)
         mmd_loss2 = mmd_rbf(feat_sm1,feat_tm1)
+        mmd_loss3 = mmd_rbf(feat_sm2,feat_tm2)
 
         # compute classification loss on source data
-        loss_mmd = params.lambda1*mmd_loss1 + params.lambda2*mmd_loss2
+        loss_mmd = lambda1*mmd_loss1 + lambda2*mmd_loss2 + lambda3*mmd_loss3 
 
         total_loss = loss_tgt + loss_mmd
         
@@ -288,7 +380,7 @@ def UTLA_train(epoch, atn_target, atn_profile, critic):
         optimizer_model.step()
 
         # predict on discriminator
-        _,feat_t_enctrain,_ = atn_target(target_data)
+        _,feat_t_enctrain,_, _ = atn_target(target_data)
         feat_concat_enctrain = torch.cat((feat_s, feat_t_enctrain), 0)
         pred_concat_enctrain = critic(feat_concat_enctrain.detach())
         loss_critic_enctrain = clf_criterion(pred_concat_enctrain, critic_label_concat)
@@ -297,13 +389,13 @@ def UTLA_train(epoch, atn_target, atn_profile, critic):
         # get the number of correct prediction
         correct_batch_encoder = preds_encoder.eq(critic_label_concat.data.view_as(preds_encoder)).float().mean()
         #breakpoint()
-        if step % params.log_interval == 0:
+        if step % log_interval == 0:
             #print(torch.eq(preds_encoder,preds_disc_train).all())
             print('Epoch Encoder {}: [{}/{} ({:.0f}%)]\tcritic_loss: {:.2f}\tencoder_loss: {:.2f}\tcritic_acc: {:.2f}'.format(
-                epoch, step * len(source_data), len(source_train_loader) * params.batch_size, 100. * step / len(source_train_loader), loss_critic_enctrain.data,
+                epoch, step * len(source_data), len(source_train_loader) * batch_size, 100. * step / len(source_train_loader), loss_critic_enctrain.data,
                 loss_tgt.data, correct_batch_encoder * 100))
             
-        
+
 ### show the guessing entropy 
 def plot_guessing_entropy(preds, real_key, device_id, model_flag):
     """
@@ -315,8 +407,11 @@ def plot_guessing_entropy(preds, real_key, device_id, model_flag):
     # max trace num for attack
     trace_num_max = 1000
     guessing_entropy = np.zeros(trace_num_max)
+    guessing_entropy_neg = np.zeros(trace_num_max)
     mean_est = np.zeros([256])
     var_est = np.zeros([256])
+    mean_est_neg = np.zeros([256])
+    var_est_neg = np.zeros([256])
     score_mat = np.zeros((trace_num_max, 256))
     plaintext = plaintexts_target_attack
 
@@ -328,33 +423,48 @@ def plot_guessing_entropy(preds, real_key, device_id, model_flag):
             truelabel = Sbox[trueState]
             score_mat[i, key_guess] = preds[i, label] - preds[i, truelabel]
     
+    score_mat_neg = np.copy(score_mat)*-1
+
     for key_guess in range(0, 256):
         mean_est[key_guess] = np.mean(score_mat[:,key_guess])
         var_est[key_guess] = np.var(score_mat[:,key_guess])
+        mean_est_neg[key_guess] = np.mean(score_mat_neg[:,key_guess])
+        var_est_neg[key_guess] = np.var(score_mat_neg[:,key_guess])
 
     # attack multiples times for average
     for i in range(0,trace_num_max):
         guessing_entropy[i] = 1
+        guessing_entropy_neg[i] = 1
         for fk in range(0, 256):
             if(fk!=real_key):
                 guessing_entropy[i] = guessing_entropy[i]  + norm.cdf(np.sqrt(i+1)*mean_est[fk]/np.sqrt(var_est[fk]), loc=0, scale=1)
+                guessing_entropy_neg[i] = guessing_entropy_neg[i]  + norm.cdf(np.sqrt(i+1)*mean_est_neg[fk]/np.sqrt(var_est_neg[fk]), loc=0, scale=1)
 
-    guessing_entropy = guessing_entropy.astype(int)
-    if(np.size(np.where(guessing_entropy<2))==0):
-        output_str = trace_num_max - 1
+    if(guessing_entropy_neg[-1] < guessing_entropy[-1]):
+        # if negative score is better, use negative score
+        guessing_entropy = guessing_entropy_neg
+
+
+    guessing_entropy_int = guessing_entropy.astype(int)
+    if(np.size(np.where(guessing_entropy_int<2))==0):
+        output_str = trace_num_max-1 
     else:
         # find the first point where GE < 2
-        output_str = np.where(guessing_entropy<2)[0][0]
+        output_str = np.where(guessing_entropy_int<2)[0][0]
     
     print(output_str+1, guessing_entropy[-1]) 
     plt.figure(figsize=(6,4))
-    p1, = plt.plot(guessing_entropy,color='red')
-    plt.xlabel('Number of traces')
-    plt.ylabel('Guessing entropy')
-    plt.ylim((0, 128))
+    plt.plot(guessing_entropy,color='red')
+    plt.xlabel('Number of traces', fontsize=14)  # x-axis label
+    plt.ylabel('Guessing entropy', fontsize=14)  # y-axis label
+    ax = plt.gca()  # get current axis
+    ax.tick_params(axis='y', labelsize=12) 
+    ax.tick_params(axis='x', labelsize=12)   
+    plt.ylim((0, 256))
+    plt.tight_layout()  # Automatically adjust padding to prevent clipping  
     plt.show()
-    plt.savefig('./figures/entropy_UTLA_'+ params.labeling_method + '_{}_to_{}_'.format(source_device_id, device_id) + model_flag + '.png') 
-    np.save('./results/entropy_UTLA_'+ params.labeling_method + '_{}_to_{}_'.format(source_device_id, device_id) + model_flag, guessing_entropy)
+    plt.savefig('./figures/GE_UTLA_crossdevXMEGA_{}_to_{}_'.format(source_device_id, device_id) + model_flag + '.png') 
+    np.save('./results/GE_UTLA_crossdevXMEGA_{}_to_{}_'.format(source_device_id, device_id) + model_flag, guessing_entropy)
 
 ### kernel function
 def guassian_kernel(source, target, kernel_mul=2.0, kernel_num=5, fix_sigma=None):
@@ -415,21 +525,11 @@ source_device_id = source_device
 target_device_id = target_device
 
 if(source_device==1):
-    real_key_01 = 0x01 # key of the source domain
+    real_key_01 = 0x21 # key of the source domain
 elif(source_device==2):
-    real_key_01 = 0x02 # key of the source domain
+    real_key_01 = 0xCD # key of the source domain
 elif(source_device==3):
-    real_key_01 = 0x03 # key of the source domain
-elif(source_device==4):
-    real_key_01 = 0x04 # key of the source domain
-elif(source_device==5):
-    real_key_01 = 0x05 # key of the source domain
-elif(source_device==6):
-    real_key_01 = 0x06 # key of the source domain
-elif(source_device==7):
-    real_key_01 = 0x07 # key of the source domain
-elif(source_device==8):
-    real_key_01 = 0x08 # key of the source domain
+    real_key_01 = 0x8F # key of the source domain
 
 if(target_device==1):
     real_key_02 = 0x01 # key of the target domain
@@ -448,9 +548,32 @@ elif(target_device==7):
 elif(target_device==8):
     real_key_02 = 0x08 # key of the target domain
 
+lambda_ = 0.1 # Penalty coefficient
+labeling_method = 'identity' # labeling of trace
+preprocess = 'horizontal_standardization' # preprocess method
+batch_size = 50
+total_epoch = 100
+finetune_epoch = 25 # epoch number for fine-tuning
+lambda1 = 2
+lambda2 = 0.05
+lambda3 = 0 # penalty coefficients for MMD loss (stability
+log_interval = 20 # epoch interval to log training information
+train_num = 20000
+source_test_num = 5000
+trace_offset = 0
+# params for optimizing models
+d_learning_rate = 1e-3
+c_learning_rate = 1e-3
+beta1 = 0.5
+beta2 = 0.9
+trace_num_max = 1000
 
-source_file_path = './Data/device0'+str(source_device)+'/'
-target_file_path = './Data/device0'+str(target_device)+'/'
+target_test_num = 5000
+trace_offset = 0
+target_trace_length = 500
+source_trace_length = 1000
+source_file_path = './Data/device'+str(source_device)+'/'
+target_file_path = '../XMEGA-Power/Data/device0'+str(target_device)+'/'
 
 no_cuda =False
 cuda = not no_cuda and torch.cuda.is_available()
@@ -458,88 +581,81 @@ seed = 42
 torch.manual_seed(seed)
 if cuda:
     torch.cuda.manual_seed(seed)
+
 class_num = 256
-trace_num_max = 1000
-trace_length = 1500
+labeling_method = 'identity' # labeling of trace
+train_num_fix = 20000
+target_finetune_num = 20000
+
 # to load traces and labels
 X_train_source = np.load(source_file_path + 'X_train.npy')
-X_train_target = np.load(target_file_path + 'X_train.npy')
+Y_train_source = np.load(source_file_path + 'Y_train.npy')
 X_attack_source = np.load(source_file_path + 'X_attack.npy')
-X_attack_target = np.load(target_file_path + 'X_attack.npy')
-
-Y_train_source = np.load(source_file_path + 'Y_ID_train.npy')
+Y_attack_source = np.load(source_file_path + 'Y_attack.npy')
+X_train_target = np.load(target_file_path + 'X_train.npy')
 Y_train_target = np.load(target_file_path + 'Y_ID_train.npy')
-Y_attack_source = np.load(source_file_path + 'Y_ID_attack.npy')
+X_attack_target = np.load(target_file_path + 'X_attack.npy')
 Y_attack_target = np.load(target_file_path + 'Y_ID_attack.npy')
 
-# to load plaintexts
-plaintexts_source_train = np.load(source_file_path + 'plaintexts_train.npy')
+# to load ciphertexts
 plaintexts_target_train = np.load(target_file_path + 'plaintexts_train.npy')
-plaintexts_source_attack = np.load(source_file_path + 'plaintexts_attack.npy')
 plaintexts_target_attack = np.load(target_file_path + 'plaintexts_attack.npy')
 
-# preprocess of traces
+#breakpoint()
 
 mn = np.repeat(np.mean(X_train_source, axis=1, keepdims=True), X_train_source.shape[1], axis=1)
 std = np.repeat(np.std(X_train_source, axis=1, keepdims=True), X_train_source.shape[1], axis=1)
 X_train_source = (X_train_source - mn)/std
 
-mn = np.repeat(np.mean(X_train_target, axis=1, keepdims=True), X_train_target.shape[1], axis=1)
-std = np.repeat(np.std(X_train_target, axis=1, keepdims=True), X_train_target.shape[1], axis=1)
-X_train_target = (X_train_target - mn)/std
-
 mn = np.repeat(np.mean(X_attack_source, axis=1, keepdims=True), X_attack_source.shape[1], axis=1)
 std = np.repeat(np.std(X_attack_source, axis=1, keepdims=True), X_attack_source.shape[1], axis=1)
 X_attack_source = (X_attack_source - mn)/std
 
+mn = np.repeat(np.mean(X_train_target, axis=1, keepdims=True), X_train_target.shape[1], axis=1)
+std = np.repeat(np.std(X_train_target, axis=1, keepdims=True), X_train_target.shape[1], axis=1)
+X_train_target = (X_train_target - mn)/std
+
 mn = np.repeat(np.mean(X_attack_target, axis=1, keepdims=True), X_attack_target.shape[1], axis=1)
 std = np.repeat(np.std(X_attack_target, axis=1, keepdims=True), X_attack_target.shape[1], axis=1)
-X_attack_target = (X_attack_target - mn)/std  
+X_attack_target = (X_attack_target - mn)/std
 
 # parameters of data loader
+# parameters of data loader
 kwargs_source_train = {
-        'trs_file': X_train_source[0:params.train_num,:],
-        'label_file': Y_train_source[0:params.train_num],
-        'trace_num':params.train_num,
-        'trace_offset':params.trace_offset,
-        'trace_length':trace_length,
-}
-kwargs_source_valid = {
-        'trs_file': X_train_source[params.train_num:params.train_num+params.valid_num,:],
-        'label_file': Y_train_source[params.train_num:params.train_num+params.valid_num],
-        'trace_num':params.valid_num,
-        'trace_offset':params.trace_offset,
-        'trace_length':trace_length,
+        'trs_file': X_train_source[0:train_num,:],
+        'label_file': Y_train_source[0:train_num],
+        'trace_num':train_num,
+        'trace_offset':trace_offset,
+        'trace_length':source_trace_length,
 }
 kwargs_source_test = {
         'trs_file': X_attack_source,
         'label_file': Y_attack_source,
-        'trace_num':params.source_test_num,
-        'trace_offset':params.trace_offset,
-        'trace_length':trace_length,
+        'trace_num':source_test_num,
+        'trace_offset':trace_offset,
+        'trace_length':source_trace_length,
 }
 kwargs_target_finetune = {
-        'trs_file': X_train_target[0:params.target_finetune_num,:],
-        'label_file': Y_train_target[0:params.target_finetune_num],
-        'trace_num':params.target_finetune_num,
-        'trace_offset':params.trace_offset,
-        'trace_length':trace_length,
+        'trs_file': X_train_target[0:target_finetune_num,:],
+        'label_file': Y_train_target[0:target_finetune_num],
+        'trace_num':target_finetune_num,
+        'trace_offset':trace_offset,
+        'trace_length':target_trace_length,
 }
 kwargs_target = {
         'trs_file': X_attack_target,
         'label_file': Y_attack_target,
-        'trace_num':params.target_test_num,
-        'trace_offset':params.trace_offset,
-        'trace_length':trace_length,
+        'trace_num':target_test_num,
+        'trace_offset':trace_offset,
+        'trace_length':target_trace_length,
 }
-source_train_loader = load_training(params.batch_size, kwargs_source_train)
-source_valid_loader = load_training(params.batch_size, kwargs_source_valid)
-source_test_loader = load_testing(params.batch_size, kwargs_source_test)
-target_finetune_loader = load_training(params.batch_size, kwargs_target_finetune)
-target_test_loader = load_testing(params.batch_size, kwargs_target)
+source_train_loader = load_training(batch_size, kwargs_source_train)
+source_test_loader = load_testing(batch_size, kwargs_source_test)
+target_finetune_loader = load_training(batch_size, kwargs_target_finetune)
+target_test_loader = load_testing(batch_size, kwargs_target)
 print('Load data complete!')
 
-### the fine-tuning model
+### the pre-trained model
 class UTLA_Net(nn.Module):
     def __init__(self, num_classes=class_num):
         super(UTLA_Net, self).__init__()
@@ -549,20 +665,18 @@ class UTLA_Net(nn.Module):
             nn.SELU(),
             nn.BatchNorm1d(8),
             nn.AvgPool1d(kernel_size=2, stride=2))
-        
-        self.features_2 = nn.Sequential(
+        self.features_2 = nn.Sequential(    
             nn.Conv1d(8, 16, kernel_size=9),
             nn.SELU(),
             nn.BatchNorm1d(16),
             nn.AvgPool1d(kernel_size=9, stride=9))
-        
         self.features_3 = nn.Sequential(  
             nn.Conv1d(16, 32, kernel_size=2),
             nn.SELU(),
             nn.BatchNorm1d(32),
             nn.AvgPool1d(kernel_size=3, stride=3),
         )
-        self.features_4 = nn.Sequential(
+        self.features_4 = nn.Sequential(  
             nn.Conv1d(32, 64, kernel_size=2),
             nn.SELU(),
             nn.BatchNorm1d(64),
@@ -581,8 +695,8 @@ class UTLA_Net(nn.Module):
     # how the network runs
     def forward(self, target):
         #target data flow
-        if(target.shape[2]!=500):
-            target = target[:, :, 450:450+500]
+        if(target.shape[2] == 1000): 
+            target = target[:, :, -500:]
         target = self.features_1(target)
         target_0 = self.features_2(target)
         target_1 = self.features_3(target_0)
@@ -590,22 +704,7 @@ class UTLA_Net(nn.Module):
         target_2 = target_2.view(target_2.size(0), -1)
         target_3 = self.classifier_1(target_2)
         result = self.final_classifier(target_3)
-        return result, target_2, target_1.view(target_1.size(0), -1)
-    
-
-# Randomly re-initialize features_1, features_2, features_3
-def weights_init_random(m):
-    if isinstance(m, nn.Conv1d):
-        nn.init.kaiming_normal_(m.weight, nonlinearity='selu')
-        if m.bias is not None:
-            nn.init.constant_(m.bias, 0)
-    elif isinstance(m, nn.BatchNorm1d):
-        nn.init.constant_(m.weight, 1)
-        nn.init.constant_(m.bias, 0)
-    elif isinstance(m, nn.Linear):
-        nn.init.kaiming_normal_(m.weight, nonlinearity='selu')
-        if m.bias is not None:
-            nn.init.constant_(m.bias, 0)
+        return result, target_2, target_1.view(target_1.size(0), -1),target_0.view(target_0.size(0), -1)
 
 ### the discriminator
 class Discriminator(nn.Module):
@@ -622,11 +721,23 @@ class Discriminator(nn.Module):
         output = self.discriminator(input)
         return output
 
+
+# Randomly re-initialize features_1, features_2, features_3
+def weights_init_random(m):
+    if isinstance(m, nn.Conv1d):
+        nn.init.kaiming_normal_(m.weight, nonlinearity='selu')
+        nn.init.constant_(m.bias, 1)
+    elif isinstance(m, nn.BatchNorm1d):
+        nn.init.constant_(m.weight, 1)
+        nn.init.constant_(m.bias, 1)
+    elif isinstance(m, nn.Linear):
+        nn.init.kaiming_normal_(m.weight, nonlinearity='selu')
+        nn.init.constant_(m.bias, 1)
+
 # create a target network
 UTLA_training_model = UTLA_Net(num_classes=class_num)
 UTLA_profile_model = UTLA_Net(num_classes=class_num)
 discriminator = Discriminator()
-
 if cuda:
     UTLA_training_model.cuda()
     UTLA_profile_model.cuda()
@@ -634,18 +745,18 @@ if cuda:
 
 # initialize a big enough loss
 min_loss = 1000
-Intermediate_GE = np.zeros([params.finetune_epoch])
-Intermediate_NTGE = np.zeros([params.finetune_epoch])
+Intermediate_GE = np.zeros([finetune_epoch])
+Intermediate_NTGE = np.zeros([finetune_epoch])
 
 optimizer_critic = optim.SGD([
         {'params': discriminator.discriminator.parameters()},
-    ],lr=params.d_learning_rate, weight_decay=0.0005, momentum=0.9)
+    ],lr=d_learning_rate, weight_decay=0.0005, momentum=0.9)
 optimizer_model = optim.SGD([
         {'params': UTLA_training_model.features_1.parameters()},
         {'params': UTLA_training_model.features_2.parameters()},
         {'params': UTLA_training_model.features_3.parameters()},
-        {'params': UTLA_training_model.features_4.parameters()}
-    ],lr=params.c_learning_rate, weight_decay=0.0005, momentum=0.9)
+        {'params': UTLA_training_model.features_4.parameters()},
+    ],lr=c_learning_rate, weight_decay=0.0005, momentum=0.9)
 
 # load the pre-trained network
 if(set_UTLA_train==1):
@@ -654,49 +765,58 @@ if(set_UTLA_train==1):
     checkpoint_profile = torch.load('./models/pre-trained_device{}.pth'.format(source_device_id),weights_only=True)
     model_dict = checkpoint_profile['model_state_dict']
     UTLA_profile_model.load_state_dict(model_dict)
+
     #initialization-target
     #checkpoint_target = torch.load('./models/pre-trained_device_{}_{}.pth'.format(source_device_id, target_device_id),weights_only=True)
     checkpoint_target = torch.load('./models/pre-trained_device{}.pth'.format(source_device_id),weights_only=True)
     model_dict = checkpoint_target['model_state_dict']
-    UTLA_training_model.load_state_dict(model_dict)
+    # Filter only classifier_1 and final_classifier layers
+    filtered_state_dict = {k: v for k, v in model_dict.items() if 'classifier_1' in k or 'final_classifier' in k}
+    # Load only matching parameters
+    UTLA_training_model.load_state_dict(filtered_state_dict, strict=False)
     UTLA_training_model.features_1.apply(weights_init_random)
     UTLA_training_model.features_2.apply(weights_init_random)
     UTLA_training_model.features_3.apply(weights_init_random)
+    UTLA_training_model.features_4.apply(weights_init_random)
 
     # restore the optimizer state
-    for epoch in range(1, params.finetune_epoch + 1):
+    for epoch in range(1, finetune_epoch + 1):
         print(f'Train Epoch {epoch}:')
         UTLA_train(epoch, UTLA_training_model, UTLA_profile_model, discriminator)
         Intermediate_NTGE[epoch-1], Intermediate_GE[epoch-1] = test_intermediate(UTLA_training_model)
-        torch.save({
+        #encoder_rep(epoch, UTLA_training_model, UTLA_profile_model)
+        print('Intermediate NTGE at epoch %d: %d' % (epoch, Intermediate_NTGE[epoch-1])) # print the intermediate NTGE for debugging
+        print('Intermediate GE at epoch %d: %.2f' % (epoch, Intermediate_GE[epoch-1])) # print the intermediate GE for debugging
+        #Plotting Intermediate GE Val
+        plt.figure(figsize=(6,4))
+        plt.plot(Intermediate_GE,color='red')
+        ax = plt.gca()
+        plt.xlabel('Epoch', fontsize = 15)
+        plt.ylabel('GE(%d)' % (trace_num_max), fontsize = 15) # GE for the max trace number') 
+        plt.ylim((0, 256))
+        ax.tick_params(axis='y', labelsize=12) 
+        ax.tick_params(axis='x', labelsize=12)      
+        plt.tight_layout()  # Automatically adjust padding to prevent clipping  
+        plt.show()
+        plt.savefig('./figures/GE_UTLA_crossdevXMEGA_{}_to_{}_'.format(source_device_id, target_device_id) + '_training' + '.png') 
+        np.save('./results/GE_UTLA_crossdevXMEGA_{}_to_{}_'.format(source_device_id, target_device_id) + '_training', Intermediate_GE)
+
+    torch.save({
         'epoch': epoch,
         'model_state_dict': UTLA_training_model.state_dict(),
-        }, './models/UTLA-final_device{}_to_{}.pth'.format(source_device_id, target_device_id))
-
-    #Plotting Intermediate GE Val
-    plt.figure(figsize=(6,4))
-    plt.plot(Intermediate_GE,color='red')
-    ax = plt.gca()
-    plt.xlabel('Epoch', fontsize = 15)
-    plt.ylabel('GE(%d)' % (trace_num_max), fontsize = 15) # GE for the max trace number') 
-    plt.ylim((0, 128))
-    ax.tick_params(axis='y', labelsize=12) 
-    ax.tick_params(axis='x', labelsize=12)      
-    plt.show()
-    plt.savefig('./figures/GE_UTLA_'+ params.labeling_method + '_{}_to_{}_'.format(source_device_id, target_device_id) + '_training' + '.png') 
-    np.save('./results/GE_UTLA_'+ params.labeling_method + '_{}_to_{}_'.format(source_device_id, target_device_id) + '_training', Intermediate_GE)
-
+        }, './models/UTLA-final_crossdevXMEGA_device{}_to_{}.pth'.format(source_device_id, target_device_id))
+    
     plt.figure(figsize=(6,4))
     plt.plot(Intermediate_NTGE,color='red')
     ax = plt.gca()
     plt.xlabel('Epoch', fontsize = 15)
     plt.ylabel(r'$N_{TGE}$', fontsize = 15)
-    plt.ylim((0, trace_num_max))
     ax.tick_params(axis='y', labelsize=12) 
-    ax.tick_params(axis='x', labelsize=12)    
+    ax.tick_params(axis='x', labelsize=12)   
+    plt.tight_layout()  # Automatically adjust padding to prevent clipping   
     plt.show()
-    plt.savefig('./figures/NTGE_UTLA_'+ params.labeling_method + '_{}_{}_'.format(source_device_id, target_device_id) + '_training' + '.png') 
-    np.save('./results/NTGE_UTLA_'+ params.labeling_method + '_{}_{}_'.format(source_device_id, target_device_id) + '_training', Intermediate_NTGE)    
+    plt.savefig('./figures/NTGE_UTLA_crossdevXMEGA_{}_{}_'.format(source_device_id, target_device_id) + '_training' + '.png') 
+    np.save('./results/NTGE_UTLA_crossdevXMEGA_{}_{}_'.format(source_device_id, target_device_id) + '_training', Intermediate_NTGE)    
     print('Final NTGE',Intermediate_NTGE[-1]) # print the minimum Intermediate GE for debugging
     print('Final GE',Intermediate_GE[-1]) # print the minimum Intermediate GE for debugging
 
@@ -705,11 +825,8 @@ UTLA_test_model = UTLA_Net(num_classes=class_num)
 print('Construct model complete')
 if cuda:
     UTLA_test_model.cuda()
-# load the final network
-if(target_device_id==source_device_id):
-    checkpoint = torch.load('./models/pre-trained_device{}.pth'.format(source_device_id),weights_only=True)
-else:
-    checkpoint = torch.load('./models/UTLA-final_device{}_to_{}.pth'.format(source_device_id, target_device_id),weights_only=True)
+
+checkpoint = torch.load('./models/UTLA-final_crossdevXMEGA_device{}_to_{}.pth'.format(source_device_id, target_device_id),weights_only=True)
 
 model_dict = checkpoint['model_state_dict']
 UTLA_test_model.load_state_dict(model_dict)

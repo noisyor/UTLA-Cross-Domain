@@ -16,6 +16,7 @@ Usage:
 """
 
 import os
+import sys
 import numpy as np
 import h5py
 from tqdm import tqdm
@@ -25,11 +26,14 @@ from sklearn.decomposition import PCA
 # Configuration
 # ============================================================================
 
-# Input path
-CHES_RAW_PATH = "./CHES_Challenge.h5"
+# Input path. Override with environment variables when data is stored elsewhere.
+CHES_RAW_PATH = os.environ.get("CHES_RAW_PATH", "./CHES_Challenge.h5")
 
 # Output path
-CHES_PREPROCESSED_PATH = "./CHES_Challenge_preprocessed.h5"
+CHES_PREPROCESSED_PATH = os.environ.get(
+    "CHES_PREPROCESSED_PATH",
+    "./CHES_Challenge_preprocessed.h5",
+)
 
 # Trace window parameters (extracted AFTER preprocessing on full traces)
 TRACE_OFFSET = 1200
@@ -162,10 +166,14 @@ def main():
     
     # Check if output already exists
     if os.path.exists(CHES_PREPROCESSED_PATH):
-        response = input(f"Output file already exists. Overwrite? (y/n): ")
-        if response.lower() != 'y':
-            print("Aborted.")
-            return
+        overwrite = os.environ.get("CHES_OVERWRITE", "").lower() in {"1", "true", "yes", "y"}
+        if overwrite or not sys.stdin.isatty():
+            print("Output file already exists. Overwriting.")
+        else:
+            response = input(f"Output file already exists. Overwrite? (y/n): ")
+            if response.lower() != 'y':
+                print("Aborted.")
+                return
     
     # Set random seed for reproducibility
     np.random.seed(42)

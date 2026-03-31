@@ -9,6 +9,10 @@ Target domain: XMEGA power traces
 The classifier is pre-trained on CHES and kept frozen.
 The encoder is adapted using adversarial domain adaptation + MMD loss.
 
+Usage:
+    python UTLA_from_CHES_to_XMEGA-Power.py --mode pretrain   # Pre-train on CHES
+    python UTLA_from_CHES_to_XMEGA-Power.py --mode transfer   # Transfer to XMEGA
+    python UTLA_from_CHES_to_XMEGA-Power.py --mode eval       # Evaluate on XMEGA
 """
 
 import matplotlib
@@ -35,11 +39,11 @@ from tqdm import tqdm
 # ============================================================================
 
 # Paths
-CHES_DATA_PATH = "./CHES_Challenge.h5"
-CHES_PREPROCESSED_PATH = "./CHES_Challenge_preprocessed.h5"
+CHES_DATA_PATH = os.environ.get("CHES_DATA_PATH", "./CHES_Challenge.h5")
+CHES_PREPROCESSED_PATH = os.environ.get("CHES_PREPROCESSED_PATH", "./CHES_Challenge_preprocessed.h5")
 USE_PREPROCESSED = True  # Use preprocessed CHES traces (faster loading)
 
-XMEGA_DATA_PATH = "./XMEGA-Power/Data/device0{}"  # Format with device number
+XMEGA_DATA_PATH = os.environ.get("XMEGA_DATA_PATH", "../XMEGA-Power/Data/device0{}")
 CHES_PRETRAINED_PATH = "./models/best_ntge_model.pth"  # 4-layer CHES model
 OUTPUT_DIR = "./models_utla"
 FIGURES_DIR = "./figures_utla"
@@ -87,7 +91,10 @@ LAMBDA2 = 0.05   # Weight for penultimate layer (features_3) MMD
 ENCODER_INIT = 'xmega'  # Options: 'random', 'source', 'xmega'
 
 # Path to supervised XMEGA model (used when ENCODER_INIT='xmega')
-XMEGA_SUPERVISED_PATH = "../XMEGA-Expt/models/pre-trained_device2.pth"
+XMEGA_SUPERVISED_PATH = os.environ.get(
+    "XMEGA_SUPERVISED_PATH",
+    "../XMEGA-Power/models/pre-trained_device2.pth",
+)
 
 USE_ADVERSARIAL = True  # Use full ADDA+MMD (Eq. 15)
 
