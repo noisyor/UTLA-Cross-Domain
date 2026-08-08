@@ -80,10 +80,10 @@ h3 { color: var(--charcoal-deep); font-size: 24px; line-height: 1.25; letter-spa
 .domain > strong { font-size: 20px; }
 .source-domain { border-left: 5px solid var(--blue); }
 .target-domain { margin-left: auto; border-left: 5px solid var(--red); }
-.signal { height: 58px; margin-top: 18px; display: flex; align-items: center; gap: 6px; }
-.signal i { flex: 1; min-width: 3px; height: 28%; background: currentColor; animation: signal 3.5s ease-in-out infinite alternate; }
-.signal i:nth-child(3n) { height: 88%; }.signal i:nth-child(4n) { height: 46%; }.signal i:nth-child(5n) { height: 68%; }
-.signal-blue { color: var(--blue); }.signal-red { color: var(--red); }
+.trace-plot { position: relative; height: 82px; margin-top: 16px; overflow: hidden; color: var(--blue-dark); border-block: 1px solid rgba(157, 104, 197, 0.22); background-image: linear-gradient(rgba(157, 104, 197, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(157, 104, 197, 0.08) 1px, transparent 1px); background-size: 100% 20px, 32px 100%; }
+.target-domain .trace-plot { color: var(--red-dark); border-color: rgba(173, 64, 87, 0.24); background-image: linear-gradient(rgba(173, 64, 87, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(173, 64, 87, 0.07) 1px, transparent 1px); }
+.trace-canvas { position: absolute; inset: 4px 0 17px; width: 100%; height: calc(100% - 21px); }
+.trace-plot > span { position: absolute; right: 4px; bottom: 2px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .model-path { min-height: 112px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; padding-inline: 30px; }
 .model-path > div { display: flex; align-items: center; gap: 10px; }
 .model-path > div:last-child { justify-content: flex-end; text-align: right; }
@@ -261,8 +261,6 @@ figcaption strong { color: #241a2b; }
 
 math { color: inherit; font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif; }
 math[display="block"] { display: block; min-width: max-content; font-size: 1.08em; }
-
-@keyframes signal { from { transform: scaleY(0.72); opacity: 0.62; } to { transform: scaleY(1.05); opacity: 1; } }
 
 @media (max-width: 1050px) {
   .page-shell, .header-inner { width: min(calc(100% - 72px), var(--max)); }

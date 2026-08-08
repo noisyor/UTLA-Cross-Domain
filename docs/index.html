@@ -52,7 +52,7 @@
           <div class="visual-label">Cross-domain attack model</div>
           <div class="domain source-domain">
             <span>Source domain</span><strong>Labeled traces</strong>
-            <div class="signal signal-blue" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="trace-plot" aria-hidden="true"><canvas class="trace-canvas" data-trace="source"></canvas><span>sample index →</span></div>
           </div>
           <div class="model-path" aria-hidden="true">
             <div><span><math aria-label="E sub p"><msub><mi>E</mi><mi>p</mi></msub></math></span><small>Source encoder</small></div>
@@ -61,7 +61,7 @@
           </div>
           <div class="domain target-domain">
             <span>Target domain</span><strong>Unlabeled traces</strong>
-            <div class="signal signal-red" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="trace-plot" aria-hidden="true"><canvas class="trace-canvas" data-trace="target"></canvas><span>sample index →</span></div>
           </div>
           <div class="visual-outcome"><span>Target key rank</span><strong><math aria-label="guessing entropy equals one"><mrow><mtext>GE</mtext><mo>=</mo><mn>1</mn></mrow></math></strong></div>
         </div>
