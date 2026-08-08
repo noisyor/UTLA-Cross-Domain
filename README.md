@@ -2,6 +2,10 @@
 
 This is the code repository for reproducing the experiments from "Attack from Shadows: Unsupervised Side-channel Transfer Learning across Devices and Modalities," appearing in AsiaCCS 2026.
 
+**Project website:** [noisyor.github.io/UTLA-Cross-Domain](https://noisyor.github.io/UTLA-Cross-Domain/)
+
+**Paper:** [ACM Digital Library](https://doi.org/10.1145/3779208.3805969)
+
 Users are requested to download the datasets from the public sources linked below and place them in the expected `Data/` subdirectories before running experiments.
 
 ## Setup

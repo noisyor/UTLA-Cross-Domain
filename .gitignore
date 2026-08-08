@@ -13,6 +13,9 @@ __pycache__/
 *.png
 *.pdf
 
+# The GitHub Pages site uses a small, curated set of web images.
+!docs/assets/*.png
+
 Convergence-analysis/
 Failure-analysis/
 **/Data/device*/

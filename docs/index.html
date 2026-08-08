@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b1020" />
+    <meta
+      name="description"
+      content="UTLA is an unsupervised side-channel transfer learning attack across devices, leakage modalities, and implementations."
+    />
+    <meta property="og:title" content="Attack from Shadows — UTLA" />
+    <meta
+      property="og:description"
+      content="Unsupervised side-channel transfer learning across devices and modalities. AsiaCCS 2026."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://noisyor.github.io/UTLA-Cross-Domain/assets/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Attack from Shadows — UTLA" />
+    <meta
+      name="twitter:description"
+      content="Unsupervised side-channel transfer learning across devices and modalities."
+    />
+    <meta name="twitter:image" content="https://noisyor.github.io/UTLA-Cross-Domain/assets/og.png" />
+    <title>Attack from Shadows — UTLA</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+
+    <header class="site-header" data-header>
+      <a class="wordmark" href="#top" aria-label="Attack from Shadows, home">
+        <span class="wordmark-mark" aria-hidden="true">A<span>F</span>S</span>
+        <span class="wordmark-text">Attack from Shadows</span>
+      </a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        <span class="sr-only">Toggle navigation</span>
+        <span></span><span></span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
+        <a href="#approach">Approach</a>
+        <a href="#evidence">Evidence</a>
+        <a href="#reproduce">Reproduce</a>
+        <a class="nav-code" href="https://github.com/noisyor/UTLA-Cross-Domain">GitHub <span>↗</span></a>
+      </nav>
+    </header>
+
+    <main id="content">
+      <section class="hero" id="top">
+        <div class="hero-grid page-shell">
+          <div class="hero-copy">
+            <p class="eyebrow"><span></span> AsiaCCS 2026 · Security in Hardware</p>
+            <h1>Attack from<br /><em>Shadows</em></h1>
+            <p class="hero-deck">
+              Unsupervised side-channel transfer learning across devices and modalities.
+            </p>
+            <p class="hero-summary">
+              UTLA turns labeled traces from an accessible source into a passive attack on an unseen target—using only unlabeled target traces, even when hardware, leakage, or implementation changes.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="https://doi.org/10.1145/3779208.3805969">Read the paper <span>↗</span></a>
+              <a class="button button-secondary" href="https://github.com/noisyor/UTLA-Cross-Domain">Explore the code <span>↗</span></a>
+            </div>
+          </div>
+
+          <div class="hero-visual" aria-label="Source traces adapt to unlabeled target traces through separate encoders and a shared classifier">
+            <div class="scope-label">PASSIVE ATTACK / LIVE TRANSFER</div>
+            <div class="trace-card trace-source">
+              <div class="trace-meta"><span>01 · SOURCE</span><b>LABELED</b></div>
+              <div class="trace-wave" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <p>Power · EM · cache</p>
+            </div>
+            <div class="adaptation-rail" aria-hidden="true">
+              <span>separate encoders</span><b>ADDA + MMD</b><span>shared classifier</span>
+            </div>
+            <div class="trace-card trace-target">
+              <div class="trace-meta"><span>02 · TARGET</span><b>UNLABELED</b></div>
+              <div class="trace-wave target-wave" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <p>Unknown key · passive observations</p>
+            </div>
+            <div class="key-result">
+              <span>KEY RANK</span>
+              <strong>GE = 1</strong>
+              <small>recovered</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-stats page-shell" aria-label="Selected results">
+          <div><strong>61</strong><span>traces</span><p>FPGA power → MCU power</p></div>
+          <div><strong>435</strong><span>traces</span><p>MCU power → x86 cache</p></div>
+          <div><strong>1,519</strong><span>traces</span><p>masked + shuffled → masked AES</p></div>
+          <div><strong>8</strong><span>datasets</span><p>power, EM, and cache timing</p></div>
+        </div>
+      </section>
+
+      <section class="question section page-shell" aria-labelledby="question-title">
+        <div class="section-kicker">THE PROBLEM</div>
+        <div class="question-grid">
+          <div>
+            <h2 id="question-title">What if the profiling device looks nothing like the target?</h2>
+          </div>
+          <div class="question-copy">
+            <p>
+              Prior unsupervised attacks look for one domain-invariant representation. That works when source and target are similar. As discrepancy grows, the common encoder becomes the bottleneck.
+            </p>
+            <p class="accent-line">UTLA keeps the task shared and lets each domain speak through its own encoder.</p>
+          </div>
+        </div>
+        <div class="shift-grid">
+          <article>
+            <span class="shift-number">01</span>
+            <h3>Hardware shifts</h3>
+            <p>Spartan-6 FPGA, XMEGA and STM32 microcontrollers, AVR, ARM Cortex-A72, and x86.</p>
+            <div class="shift-meter"><i style="width: 72%"></i></div>
+          </article>
+          <article>
+            <span class="shift-number">02</span>
+            <h3>Leakage shifts</h3>
+            <p>Fine-grained power and EM measurements transfer into coarse-grained cache timing.</p>
+            <div class="shift-meter"><i style="width: 88%"></i></div>
+          </article>
+          <article>
+            <span class="shift-number">03</span>
+            <h3>Implementation shifts</h3>
+            <p>UTLA crosses AES implementations protected by different masking and shuffling strategies.</p>
+            <div class="shift-meter"><i style="width: 96%"></i></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="approach section" id="approach" aria-labelledby="approach-title">
+        <div class="page-shell">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">THE APPROACH</p>
+              <h2 id="approach-title">One classifier.<br /><em>Two encoders.</em></h2>
+            </div>
+            <p>
+              UTLA freezes the source classifier, trains a target-specific encoder adversarially, and adds explicit multi-layer MMD regularization to stabilize alignment under large domain gaps.
+            </p>
+          </div>
+
+          <figure class="method-figure">
+            <div class="figure-frame">
+              <img src="assets/utla-pipeline.png" alt="UTLA pipeline with source and target encoders, shared classifier, discriminator, and MMD alignment" loading="lazy" />
+            </div>
+            <figcaption><span>FIG. 01</span> The target encoder adapts while the source classifier remains fixed.</figcaption>
+          </figure>
+
+          <div class="method-steps">
+            <article>
+              <span>01</span>
+              <h3>Profile</h3>
+              <p>Train source encoder E<sub>p</sub> and classifier C<sub>p</sub> on labeled traces from a controlled device.</p>
+            </article>
+            <article>
+              <span>02</span>
+              <h3>Adapt</h3>
+              <p>Learn target encoder E<sub>t</sub> from unlabeled target traces with adversarial training and MMD.</p>
+            </article>
+            <article>
+              <span>03</span>
+              <h3>Recover</h3>
+              <p>Pair E<sub>t</sub> with the frozen C<sub>p</sub>, rank key hypotheses, and recover the target key.</p>
+            </article>
+          </div>
+
+          <div class="formula-strip" aria-label="UTLA encoder objective">
+            <span>Target encoder objective</span>
+            <strong>ℒ*<sub>advE</sub> = ℒ<sub>advE</sub> + Σ λ<sub>i</sub> · MMD²(F<sub>p,i</sub>, F<sub>t,i</sub>)</strong>
+            <p>Adversarial alignment <i>+</i> explicit multi-layer distribution matching</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="evidence section page-shell" id="evidence" aria-labelledby="evidence-title">
+        <div class="section-heading evidence-heading">
+          <div>
+            <p class="section-kicker">THE EVIDENCE</p>
+            <h2 id="evidence-title">Transfer that survives<br /><em>the domain gap.</em></h2>
+          </div>
+          <p>
+            N<sub>GE</sub> is the number of target traces required to reach guessing entropy 1. Lower is better; “N.C.” means the method did not recover the key within 25,000 traces.
+          </p>
+        </div>
+
+        <div class="filter-bar" role="group" aria-label="Filter results by transfer type">
+          <button class="active" type="button" data-filter="all">All transfers</button>
+          <button type="button" data-filter="platform">Platform</button>
+          <button type="button" data-filter="modality">Modality</button>
+          <button type="button" data-filter="implementation">Implementation</button>
+        </div>
+
+        <div class="results-grid" aria-live="polite">
+          <article class="result-card featured" data-category="platform">
+            <div class="result-top"><span>DIFFERENT PLATFORM</span><b>POWER → POWER</b></div>
+            <div class="transfer-pair"><strong>Spartan-6</strong><i>→</i><strong>XMEGA</strong></div>
+            <p>SAKURA-AES to XMEGA power</p>
+            <div class="result-value"><strong>61</strong><span>N<sub>GE</sub><br />traces</span></div>
+            <div class="comparison"><span>Prior unsupervised methods</span><b>3,210 / 4,123 / N.C.</b></div>
+          </article>
+
+          <article class="result-card" data-category="modality">
+            <div class="result-top"><span>DIFFERENT MODALITY</span><b>POWER → CACHE</b></div>
+            <div class="transfer-pair"><strong>XMEGA</strong><i>→</i><strong>x86</strong></div>
+            <p>Power traces to Flush+Flush timing</p>
+            <div class="result-value"><strong>435</strong><span>N<sub>GE</sub><br />traces</span></div>
+            <div class="comparison"><span>Prior unsupervised methods</span><b>N.C. across all</b></div>
+          </article>
+
+          <article class="result-card" data-category="implementation">
+            <div class="result-top"><span>DIFFERENT IMPLEMENTATION</span><b>MASK + SHUFFLE → MASK</b></div>
+            <div class="transfer-pair"><strong>ASCADv2</strong><i>→</i><strong>ASCADv1</strong></div>
+            <p>STM32 power to AVR EM</p>
+            <div class="result-value"><strong>1,519</strong><span>N<sub>GE</sub><br />traces</span></div>
+            <div class="comparison"><span>Prior unsupervised methods</span><b>N.C. across all</b></div>
+          </article>
+
+          <article class="result-card compact" data-category="modality">
+            <div class="result-top"><span>SAME PLATFORM</span><b>EM → POWER</b></div>
+            <div class="transfer-pair"><strong>XMEGA</strong><i>→</i><strong>XMEGA</strong></div>
+            <div class="result-value"><strong>47</strong><span>N<sub>GE</sub> traces</span></div>
+          </article>
+
+          <article class="result-card compact" data-category="platform modality">
+            <div class="result-top"><span>PLATFORM + MODALITY</span><b>FPGA POWER → MCU EM</b></div>
+            <div class="transfer-pair"><strong>SAKURA</strong><i>→</i><strong>XMEGA</strong></div>
+            <div class="result-value"><strong>142</strong><span>N<sub>GE</sub> traces</span></div>
+          </article>
+
+          <article class="result-card compact" data-category="platform modality">
+            <div class="result-top"><span>PLATFORM + MODALITY</span><b>ARM EM → MCU POWER</b></div>
+            <div class="transfer-pair"><strong>CHES25</strong><i>→</i><strong>XMEGA</strong></div>
+            <div class="result-value"><strong>56</strong><span>N<sub>GE</sub> traces</span></div>
+          </article>
+        </div>
+
+        <div class="evidence-note">
+          <span>BOUNDARY</span>
+          <p>UTLA does not make every transfer possible. Cache timing → SAKURA-AES did not converge, matching its severe geometric mismatch (α<sub>T</sub> = 14.20).</p>
+        </div>
+      </section>
+
+      <section class="visual-proof section" aria-labelledby="proof-title">
+        <div class="page-shell">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">WHY IT WORKS</p>
+              <h2 id="proof-title">Alignment without<br /><em>identity.</em></h2>
+            </div>
+            <p>
+              Separate encoders lower the shared-task error when one common representation cannot explain both domains. MMD supplies the explicit signal that keeps adversarial adaptation stable.
+            </p>
+          </div>
+          <div class="proof-grid">
+            <figure class="proof-main">
+              <img src="assets/shared-vs-separate.png" alt="Comparison between prior shared-encoder approaches and UTLA's separate source and target encoders" loading="lazy" />
+              <figcaption><span>FIG. 02</span> Shared encoder versus UTLA’s separate-encoder design.</figcaption>
+            </figure>
+            <div class="proof-side">
+              <figure>
+                <img src="assets/convergence.png" alt="Guessing entropy and training loss converging during XMEGA EM to power transfer" loading="lazy" />
+                <figcaption><span>LOSS</span> Unsupervised loss stabilizes as GE reaches 1.</figcaption>
+              </figure>
+              <blockquote>
+                <p>Public side-channel datasets can become attack assets against unseen devices implementing the same cryptographic algorithm.</p>
+                <cite>Security implication</cite>
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="benchmarks section page-shell" aria-labelledby="benchmarks-title">
+        <p class="section-kicker">EVALUATION SURFACE</p>
+        <h2 id="benchmarks-title">Eight datasets. Three leakage modalities. One attack question.</h2>
+        <div class="benchmark-grid">
+          <a href="https://github.com/noisyor/UTLA-Cross-Domain/tree/main/XMEGA-Power"><span>POWER</span><strong>XMEGA</strong><small>8-bit MCU · 500 samples</small></a>
+          <a href="https://github.com/noisyor/UTLA-Cross-Domain/tree/main/XMEGA-EM"><span>EM</span><strong>XMEGA</strong><small>8-bit MCU · 1,500 samples</small></a>
+          <a href="https://github.com/noisyor/UTLA-Cross-Domain/tree/main/Sakura-AES"><span>POWER</span><strong>SAKURA-AES</strong><small>Spartan-6 FPGA · 1,000 samples</small></a>
+          <a href="https://github.com/noisyor/UTLA-Cross-Domain/tree/main/ASCADv1-variable-key"><span>EM</span><strong>ASCADv1</strong><small>AVR MCU · masking</small></a>
+          <a href="https://github.com/noisyor/UTLA-Cross-Domain/tree/main/ASCADv2"><span>POWER</span><strong>ASCADv2</strong><small>STM32 · masking + shuffling</small></a>
+          <a href="https://github.com/noisyor/UTLA-Cross-Domain/tree/main/x86-Cache"><span>CACHE</span><strong>x86</strong><small>Intel i7 · Flush+Flush</small></a>
+          <a href="https://github.com/noisyor/UTLA-Cross-Domain/tree/main/CHES-2025"><span>EM</span><strong>CHES25</strong><small>ARM Cortex-A72 · 7,000 samples</small></a>
+          <div class="benchmark-summary"><span>PUBLIC DATA</span><strong>25K</strong><small>fixed target-trace adaptation budget</small></div>
+        </div>
+      </section>
+
+      <section class="reproduce section" id="reproduce" aria-labelledby="reproduce-title">
+        <div class="page-shell reproduce-grid">
+          <div class="reproduce-copy">
+            <p class="section-kicker">REPRODUCE THE WORK</p>
+            <h2 id="reproduce-title">From public traces<br />to a transfer run.</h2>
+            <p>The repository groups scripts by source dataset. Each folder documents its expected data layout, profiling command, transfer entry point, and output directories.</p>
+            <a class="button button-primary" href="https://github.com/noisyor/UTLA-Cross-Domain">Open repository <span>↗</span></a>
+          </div>
+
+          <div class="terminal" aria-label="Example commands for reproducing UTLA">
+            <div class="terminal-bar"><span></span><span></span><span></span><b>UTLA / QUICK START</b></div>
+            <div class="command-block">
+              <span class="command-label">01 · INSTALL</span>
+              <code><i>$</i> pip install -r requirements.txt</code>
+              <button type="button" data-copy="pip install -r requirements.txt">Copy</button>
+            </div>
+            <div class="command-block">
+              <span class="command-label">02 · PROFILE SOURCE</span>
+              <code><i>$</i> python Source_Profiling.py 1 1</code>
+              <button type="button" data-copy="python Source_Profiling.py 1 1">Copy</button>
+            </div>
+            <div class="command-block">
+              <span class="command-label">03 · TRANSFER</span>
+              <code><i>$</i> python UTLA_from_Sakura_to_XMEGA-Power.py 1 1 2</code>
+              <button type="button" data-copy="python UTLA_from_Sakura_to_XMEGA-Power.py 1 1 2">Copy</button>
+            </div>
+            <p>Run experiment scripts from inside their dataset directory so relative paths resolve correctly.</p>
+          </div>
+        </div>
+
+        <div class="workflow page-shell">
+          <div><span>01</span><strong>Download</strong><p>Place public traces in the documented Data path.</p></div>
+          <div><span>02</span><strong>Profile</strong><p>Train the encoder and classifier on labeled source traces.</p></div>
+          <div><span>03</span><strong>Adapt</strong><p>Train the target encoder using unlabeled target traces.</p></div>
+          <div><span>04</span><strong>Evaluate</strong><p>Measure the trace count needed to reach GE = 1.</p></div>
+        </div>
+      </section>
+
+      <section class="citation section page-shell" aria-labelledby="citation-title">
+        <div>
+          <p class="section-kicker">CITE THE PAPER</p>
+          <h2 id="citation-title">Attack from Shadows</h2>
+          <p>Saion K. Roy, Ziyue Zhang, Aidong Adam Ding, and Yunsi Fei. ACM Asia Conference on Computer and Communications Security, 2026.</p>
+          <div class="citation-links">
+            <a href="https://doi.org/10.1145/3779208.3805969">DOI: 10.1145/3779208.3805969 ↗</a>
+            <button type="button" data-copy="@inproceedings{roy2026attack, title={Attack from Shadows: Unsupervised Side-channel Transfer Learning across Devices and Modalities}, author={Roy, Saion K. and Zhang, Ziyue and Ding, Aidong Adam and Fei, Yunsi}, booktitle={ACM Asia Conference on Computer and Communications Security}, year={2026}, doi={10.1145/3779208.3805969}}">Copy BibTeX</button>
+          </div>
+        </div>
+        <div class="paper-card" aria-hidden="true">
+          <span>ASIA CCS ’26</span>
+          <strong>Attack<br />from<br /><em>Shadows</em></strong>
+          <small>Roy · Zhang · Ding · Fei</small>
+          <i>UTLA</i>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="page-shell footer-grid">
+        <div>
+          <a class="wordmark footer-wordmark" href="#top"><span class="wordmark-mark" aria-hidden="true">A<span>F</span>S</span></a>
+          <p>Unsupervised side-channel transfer learning across devices and modalities.</p>
+        </div>
+        <div>
+          <span>PROJECT</span>
+          <a href="https://doi.org/10.1145/3779208.3805969">Paper</a>
+          <a href="https://github.com/noisyor/UTLA-Cross-Domain">Code</a>
+        </div>
+        <div>
+          <span>AUTHORS</span>
+          <p>Saion K. Roy<br />Ziyue Zhang<br />Aidong Adam Ding<br />Yunsi Fei</p>
+        </div>
+        <div>
+          <span>VENUE</span>
+          <p>AsiaCCS 2026<br />Bangalore, India</p>
+        </div>
+      </div>
+      <div class="footer-bottom page-shell">
+        <span>© 2026 UTLA Research Project</span>
+        <span>Built from the paper and public artifact.</span>
+      </div>
+    </footer>
+  </body>
+</html>
